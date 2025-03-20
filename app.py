@@ -428,6 +428,70 @@ def sample_data():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+# Add this to your app.py file, before the if __name__ == '__main__': line
+
+@app.route('/')
+def home():
+    """Homepage to show API is running"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ML Model API</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            h1 {
+                color: #2c3e50;
+                border-bottom: 2px solid #3498db;
+                padding-bottom: 10px;
+            }
+            .card {
+                background-color: #f9f9f9;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            code {
+                background-color: #f1f1f1;
+                padding: 2px 5px;
+                border-radius: 3px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>ML Model API</h1>
+        <div class="card">
+            <h2>✅ API is running</h2>
+            <p>The Machine Learning Model API is up and running. You can use the following endpoints:</p>
+            <ul>
+                <li><code>/api/datasets</code> - List available datasets</li>
+                <li><code>/api/dataset-info</code> - Get information about current dataset</li>
+                <li><code>/api/sample-data</code> - Get sample data from current dataset</li>
+                <li><code>/api/model-performance</code> - Get model performance metrics</li>
+                <li><code>/api/feature-importance</code> - Get feature importance from the model</li>
+                <li><code>/api/correlations</code> - Get correlations from the dataset</li>
+                <li><code>/api/predict</code> - Make predictions (POST request)</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3>API Status</h3>
+            <p>Current date: """ + pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S") + """</p>
+            <p>Datasets available: """ + str(len(get_available_datasets())) + """</p>
+            <p>Current dataset: """ + (get_current_dataset() or "None") + """</p>
+            <p>Model loaded: """ + ("Yes" if model is not None else "No") + """</p>
+        </div>
+    </body>
+    </html>
+    """
 
 if __name__ == '__main__':
     # Load or train model on startup
