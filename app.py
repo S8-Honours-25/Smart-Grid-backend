@@ -6,7 +6,7 @@ import pickle
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import LabelEncoder
 from werkzeug.utils import secure_filename
@@ -27,8 +27,9 @@ os.makedirs(DATASETS_FOLDER, exist_ok=True)
 # Global variables
 models = {
     'random_forest': None,
-    'gradient_boosting': None,
-    'logistic_regression': None
+    # 'gradient_boosting': None,
+    'logistic_regression': None,
+     'sgd_classifier': None  
 }
 current_model_type = 'random_forest'  # Default model
 label_encoder = None
@@ -41,13 +42,23 @@ model_params = {
         'class': RandomForestClassifier,
         'params': {'n_estimators': 100, 'random_state': 42}
     },
-    'gradient_boosting': {
-        'class': GradientBoostingClassifier,
-        'params': {'n_estimators': 100, 'random_state': 42}
-    },
+    # 'gradient_boosting': {
+    #     'class': GradientBoostingClassifier,
+    #     'params': {'n_estimators': 100, 'random_state': 42}
+    # },
     'logistic_regression': {
         'class': LogisticRegression,
         'params': {'max_iter': 1000, 'random_state': 42}
+    },
+    'sgd_classifier': {  # Added SGD Classifier parameters
+        'class': SGDClassifier,
+        'params': {
+            'loss': 'log_loss',  # log loss for probability estimation
+            'penalty': 'l2',
+            'max_iter': 1000,
+            'tol': 1e-3,
+            'random_state': 42
+        }
     }
 }
 
@@ -533,7 +544,6 @@ def compare_models():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 @app.route('/api/predict', methods=['POST'])
 def predict():
     """Make predictions based on input features"""
@@ -549,10 +559,12 @@ def predict():
     try:
         # Get data from request
         data = request.json
-        input_data = data.get('features', {})
-        specific_model = data.get('model')
+        input_data = data  # Directly use the input data
+        
+
         
         # If a specific model is requested, use that one
+        specific_model = data.get('model')
         if specific_model and specific_model in models and models[specific_model] is not None:
             model_to_use = models[specific_model]
             model_type = specific_model
@@ -564,9 +576,9 @@ def predict():
         input_df = pd.DataFrame(input_data, index=[0])
         
         # Ensure all required features are present
-        for col in feature_columns:
-            if col not in input_df.columns:
-                return jsonify({'error': f'Missing feature: {col}'}), 400
+        missing_features = set(feature_columns) - set(input_df.columns)
+        if missing_features:
+            return jsonify({'error': f'Missing features: {missing_features}'}), 400
         
         # Make prediction
         prediction_idx = model_to_use.predict(input_df[feature_columns])
